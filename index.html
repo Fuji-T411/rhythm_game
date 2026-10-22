@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>全校わくわくリズム天国</title>
+<style>
+*{box-sizing:border-box;margin:0;user-select:none;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden}
+body{height:100dvh;display:flex;flex-direction:column;color:#1b1b3a;font-weight:900;
+ font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic","Meiryo",sans-serif;
+ background:linear-gradient(135deg,#ffe66d,#ff9ff3 50%,#74d3ff)}
+button{font:inherit;color:inherit;cursor:pointer;border:.5vmin solid #1b1b3a;border-radius:2vmin;background:#fff;
+ padding:1vmin 2vmin;min-height:48px;box-shadow:0 .6vmin 0 #1b1b3a;font-size:max(2.4vmin,16px)}
+button:active{transform:translateY(.5vmin);box-shadow:none}
+#panel{padding:1.2vmin 2vmin;display:flex;flex-direction:column;gap:1vmin;background:rgba(255,255,255,.55)}
+.r{display:flex;flex-wrap:wrap;align-items:center;gap:1.2vmin}
+h1{font-size:max(3.6vmin,22px);flex:1;min-width:260px}
+.big{font-size:max(3vmin,20px);padding:1vmin 3vmin;background:#ffd23f}
+.go{background:#06d6a0}
+.sel{background:#4361ee;color:#fff}
+.act{background:#ddd;opacity:.6}
+.act.sel{background:#fff;color:#1b1b3a;opacity:1;outline:.8vmin solid #ff4d6d}
+#bpm{width:30vw;height:40px;accent-color:#ff4d6d}
+#bar{display:none;padding:1.2vmin 2vmin;align-items:center;justify-content:space-between;background:#1b1b3a;color:#fff}
+#phase{font-size:max(5vmin,26px)}
+body.play #panel{display:none}
+body.play #bar{display:flex}
+#stage{--g:1.8vmin;flex:1;min-height:0;display:flex;flex-direction:column;gap:var(--g);padding:var(--g)}
+.row{flex:1;min-height:0;display:flex;justify-content:center;gap:var(--g)}
+.cell{container-type:size;flex:0 0 calc((100% - (var(--cols) - 1)*var(--g))/var(--cols));background:var(--c);
+ border:1.2vmin solid #1b1b3a;border-radius:4vmin;box-shadow:0 1.2vmin 0 #1b1b3a;position:relative;
+ display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .08s,filter .15s}
+.em{font-size:58cqmin;line-height:1.05}
+.lb{font-size:16cqmin;color:#fff;-webkit-text-stroke:2cqmin #1b1b3a;paint-order:stroke fill}
+.no{position:absolute;top:3cqmin;left:3cqmin;width:20cqmin;height:20cqmin;border-radius:50%;background:#fff;
+ border:1.2cqmin solid #1b1b3a;display:grid;place-items:center;font-style:normal;font-size:12cqmin}
+#stage.running .cell:not(.on){filter:brightness(.62) saturate(.7)}
+.cell.on{transform:scale(1.07);filter:brightness(1.3) saturate(1.3);border-color:#fff;z-index:2;
+ box-shadow:0 0 0 1.2vmin #1b1b3a,0 0 8vmin 3vmin #fff176}
+#cd{display:none;position:fixed;inset:0;display:none;place-items:center;text-align:center;pointer-events:none;z-index:20;
+ font-size:55vmin;line-height:100vh;color:#fff;-webkit-text-stroke:2.5vmin #1b1b3a;paint-order:stroke fill;text-shadow:0 2vmin 0 #1b1b3a}
+#cd.pop{animation:pop .5s ease-out}
+@keyframes pop{0%{transform:scale(2.2);opacity:0}30%{opacity:1}100%{transform:scale(1)}}
+#clear{display:none;position:fixed;inset:0;z-index:50;background:rgba(27,27,58,.55);align-items:center;justify-content:center;flex-direction:column;gap:4vmin}
+#clear canvas{position:absolute;inset:0}
+#clear h2{position:relative;font-size:15vw;white-space:nowrap;color:#ffe66d;-webkit-text-stroke:2vmin #ff4d6d;
+ paint-order:stroke fill;text-shadow:0 2vmin 0 #1b1b3a;animation:zoom .9s ease-in-out infinite alternate}
+#clear button{position:relative;font-size:4vmin;background:#06d6a0}
+@keyframes zoom{from{transform:scale(.92) rotate(-2deg)}to{transform:scale(1.08) rotate(2deg)}}
+</style>
+</head>
+<body>
+<div id="panel">
+ <div class="r"><h1>🎉 全校わくわくリズム天国</h1>
+  <button class="big" id="next">🎲 つぎのパターン</button>
+  <button class="big go" id="go">▶ スタート</button></div>
+ <div class="r"><span>拍子</span><span class="r" id="beatBtns"></span>
+  <span style="margin-left:2vmin">はやさ BPM <b id="bv">100</b></span>
+  <input type="range" id="bpm" min="60" max="180" value="100"></div>
+ <div class="r" id="acts"></div>
+</div>
+<div id="bar"><span id="phase"></span><button id="stop">■ とめる</button></div>
+<div id="stage"></div>
+<div id="cd"></div>
+<div id="clear"><canvas id="cv"></canvas><h2>できたらすごい！</h2><button id="again">もういちど</button></div>
+
+<script>
+const $=s=>document.querySelector(s);
+const ACTS={
+ clap:{e:'👏',n:'たたく',c:'#ff4d6d'},
+ foot:{e:'🦶',n:'ふむ',c:'#ff9f1c'},
+ jump:{e:'🐰',n:'ジャンプ',c:'#2ec4b6'},
+ rest:{e:'☕',n:'やすみ',c:'#8d99ae'},
+ right:{e:'👉',n:'みぎ',c:'#4361ee'},
+ left:{e:'👈',n:'ひだり',c:'#9b5de5'},
+ knee:{e:'🦵',n:'ひざ',c:'#06d6a0'},
+ shoulder:{e:'🙋',n:'かた',c:'#f15bb5'}
+};
+let beats=4,bpm=100,sel=new Set(['clap','foot','jump','rest']),pat=[],cells=[],run=null,cfOn=false;
+
+/* ---------- 表示 ---------- */
+function gen(){const a=[...sel];pat=Array.from({length:beats},()=>a[Math.random()*a.length|0]);render();}
+function render(){
+ const st=$('#stage');st.innerHTML='';cells=[];
+ const cols=beats<=4?beats:Math.ceil(beats/2);          // 3-4拍:1行 / 5-8拍:2行
+ st.style.setProperty('--cols',cols);
+ const rows=beats<=4?[pat]:[pat.slice(0,cols),pat.slice(cols)];
+ let k=0;
+ rows.forEach(r=>{const d=document.createElement('div');d.className='row';
+  r.forEach(a=>{const c=document.createElement('div');c.className='cell';c.style.setProperty('--c',ACTS[a].c);
+   c.innerHTML=`<i class="no">${++k}</i><div class="em">${ACTS[a].e}</div><div class="lb">${ACTS[a].n}</div>`;
+   d.appendChild(c);cells.push(c);});
+  st.appendChild(d);});
+}
+function buildUI(){
+ for(let n=3;n<=8;n++){const b=document.createElement('button');b.textContent=n;b.dataset.n=n;
+  b.onclick=()=>{beats=n;mark();gen();};$('#beatBtns').appendChild(b);}
+ for(const k in ACTS){const b=document.createElement('button');b.className='act';b.dataset.k=k;
+  b.textContent=ACTS[k].e+' '+ACTS[k].n;
+  b.onclick=()=>{if(sel.has(k)){if(sel.size>1)sel.delete(k);}else sel.add(k);mark();};
+  $('#acts').appendChild(b);}
+ mark();
+}
+function mark(){
+ document.querySelectorAll('#beatBtns button').forEach(b=>b.classList.toggle('sel',+b.dataset.n===beats));
+ document.querySelectorAll('.act').forEach(b=>b.classList.toggle('sel',sel.has(b.dataset.k)));
+}
+function light(i){cells.forEach((c,j)=>c.classList.toggle('on',j===i));}
+
+/* ---------- 音(Web Audio合成) ---------- */
+let ac,master,noiseBuf;
+function initAudio(){
+ if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)();
+  const comp=ac.createDynamicsCompressor();master=ac.createGain();master.gain.value=.8;
+  master.connect(comp);comp.connect(ac.destination);
+  noiseBuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);
+  const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
+ if(ac.state==='suspended')ac.resume();
+}
+function osc(o,t,{type='sine',f1,f2,dur,vol=.5,pan=0}){
+ const os=ac.createOscillator(),g=ac.createGain(),p=ac.createStereoPanner();
+ os.type=type;os.frequency.setValueAtTime(f1,t);
+ if(f2)os.frequency.exponentialRampToValueAtTime(f2,t+dur);
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+ p.pan.value=pan;os.connect(g);g.connect(p);p.connect(o);os.start(t);os.stop(t+dur+.05);
+}
+function noise(o,t,{ft='highpass',f=1000,q=1,dur=.1,vol=.5}){
+ const s=ac.createBufferSource(),fl=ac.createBiquadFilter(),g=ac.createGain();
+ s.buffer=noiseBuf;fl.type=ft;fl.frequency.value=f;fl.Q.value=q;
+ g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
+ s.connect(fl);fl.connect(g);g.connect(o);s.start(t,Math.random()*.4,dur+.05);
+}
+const SND={
+ clap:(o,t)=>{[0,.015,.03].forEach((d,i)=>noise(o,t+d,{ft:'bandpass',f:1900,q:.8,dur:i<2?.03:.2,vol:i<2?.8:1.1}));},
+ foot:(o,t)=>{osc(o,t,{f1:160,f2:40,dur:.38,vol:1.4});noise(o,t,{ft:'lowpass',f:500,dur:.05,vol:.5});},
+ jump:(o,t)=>osc(o,t,{type:'triangle',f1:300,f2:1100,dur:.28,vol:.8}),
+ rest:(o,t)=>{osc(o,t,{f1:1200,dur:.09,vol:.7});osc(o,t,{f1:1900,dur:.05,vol:.3});},
+ right:(o,t)=>{osc(o,t,{type:'triangle',f1:988,dur:.4,vol:.7,pan:.9});osc(o,t,{f1:1976,dur:.25,vol:.25,pan:.9});},
+ left:(o,t)=>{osc(o,t,{type:'triangle',f1:659,dur:.4,vol:.7,pan:-.9});osc(o,t,{f1:1318,dur:.25,vol:.25,pan:-.9});},
+ knee:(o,t)=>osc(o,t,{f1:250,f2:110,dur:.24,vol:1.1}),
+ shoulder:(o,t)=>{osc(o,t,{type:'square',f1:540,dur:.14,vol:.3});osc(o,t,{type:'square',f1:800,dur:.14,vol:.3});}
+};
+function beep(o,t,go){osc(o,t,{f1:go?1320:880,dur:go?.4:.14,vol:.7});if(go)osc(o,t,{type:'triangle',f1:1760,dur:.4,vol:.3});}
+function fanfare(o,t){
+ [[523,0],[659,.16],[784,.32],[1046,.48]].forEach(([f,d])=>{
+  osc(o,t+d,{type:'sawtooth',f1:f,dur:.22,vol:.28});osc(o,t+d,{type:'square',f1:f*2,dur:.22,vol:.1});});
+ [523,659,784,1046,1318].forEach(f=>{osc(o,t+.7,{type:'sawtooth',f1:f,dur:1.4,vol:.2});osc(o,t+.7,{type:'triangle',f1:f/2,dur:1.4,vol:.2});});
+ noise(o,t+.7,{f:5000,dur:1.6,vol:.5});
+}
+
+/* ---------- 進行(AudioContext.currentTimeで全イベントを事前予約) ---------- */
+function start(){
+ if(run)return;
+ initAudio();
+ const b=60/bpm,n=beats,t0=ac.currentTime+.4,g=ac.createGain();g.connect(master);
+ const ev=[],seg=[0,n+4]; // おてほん開始拍 / ほんばん開始拍
+ for(let i=0;i<n;i++){const t=t0+i*b;ev.push({t,k:'demo',i});SND[pat[i]](g,t);}
+ for(let k=0;k<4;k++){const t=t0+(n+k)*b;ev.push({t,k:'cd',i:k});beep(g,t,k===3);}
+ for(let i=0;i<n;i++){const t=t0+(n+4+i)*b;ev.push({t,k:'play',i});SND[pat[i]](g,t);}
+ const tEnd=t0+(2*n+5)*b;ev.push({t:tEnd,k:'end'});fanfare(g,tEnd);
+ // BGM:ハイハット+downbeatベース
+ for(let k=0;k<2*n+4;k++){const t=t0+k*b;
+  noise(g,t,{f:7000,dur:.04,vol:.1});noise(g,t+b/2,{f:7000,dur:.03,vol:.06});
+  if(k<n||k>=n+4){const i=k<n?k:k-n-4;if(i===0)osc(g,t,{type:'triangle',f1:130,f2:98,dur:.3,vol:.3});}}
+ run={ev,b,g,off:0};
+ document.body.classList.add('play');$('#stage').classList.add('running');
+ phase('👀 おてほんタイム：みてね！');
+ requestAnimationFrame(loop);
+}
+function phase(t){$('#phase').textContent=t;}
+function loop(){
+ if(!run)return;
+ const now=ac.currentTime-(ac.outputLatency||0);
+ while(run&&run.ev.length&&run.ev[0].t<=now)handle(run.ev.shift());
+ if(run&&run.off&&now>=run.off){light(-1);run.off=0;}
+ if(run)requestAnimationFrame(loop);
+}
+function handle(e){
+ const cd=$('#cd');
+ if(e.k==='cd'){
+  if(e.i===0)phase('⏱ じゅんび！');
+  light(-1);cd.textContent=['3','2','1','GO!'][e.i];cd.style.display='block';
+  cd.classList.remove('pop');void cd.offsetWidth;cd.classList.add('pop');
+ }else if(e.k==='demo'||e.k==='play'){
+  cd.style.display='none';
+  if(e.k==='play'&&e.i===0)phase('🙌 ほんばんタイム：いっしょに！');
+  light(e.i);run.off=e.t+Math.min(run.b*.8,.45);
+ }else{finish(true);}
+}
+function finish(clear){
+ if(run){if(!clear)run.g.disconnect();run=null;}
+ light(-1);$('#cd').style.display='none';
+ $('#stage').classList.remove('running');document.body.classList.remove('play');
+ if(clear)showClear();
+}
+
+/* ---------- 紙吹雪 ---------- */
+function showClear(){
+ const el=$('#clear'),cv=$('#cv'),x=cv.getContext('2d');
+ el.style.display='flex';cv.width=innerWidth;cv.height=innerHeight;cfOn=true;
+ const P=Array.from({length:260},()=>({x:Math.random()*cv.width,y:-Math.random()*cv.height,
+  vx:(Math.random()-.5)*5,vy:2+Math.random()*6,w:10+Math.random()*16,h:6+Math.random()*10,
+  a:Math.random()*6,va:(Math.random()-.5)*.35,c:`hsl(${Math.random()*360},95%,60%)`}));
+ (function f(){
+  if(!cfOn)return;x.clearRect(0,0,cv.width,cv.height);
+  P.forEach(p=>{p.x+=p.vx+Math.sin(p.a);p.y+=p.vy;p.a+=p.va;
+   if(p.y>cv.height+20){p.y=-20;p.x=Math.random()*cv.width;}
+   x.save();x.translate(p.x,p.y);x.rotate(p.a);x.fillStyle=p.c;x.fillRect(-p.w/2,-p.h/2,p.w,p.h);x.restore();});
+  requestAnimationFrame(f);
+ })();
+}
+function closeClear(){cfOn=false;$('#clear').style.display='none';}
+
+/* ---------- イベント ---------- */
+$('#bpm').oninput=e=>{bpm=+e.target.value;$('#bv').textContent=bpm;};
+$('#next').onclick=gen;
+$('#go').onclick=start;
+$('#stop').onclick=()=>finish(false);
+$('#again').onclick=closeClear;
+$('#clear').onclick=e=>{if(e.target.id!=='again')closeClear();};
+buildUI();gen();
+</script>
+</body>
+</html>
