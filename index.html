@@ -10,9 +10,11 @@ html,body{height:100%;overflow:hidden}
 body{height:100dvh;display:flex;flex-direction:column;color:#1b1b3a;font-weight:900;
  font-family:"Hiragino Maru Gothic ProN","BIZ UDPGothic","Yu Gothic","Meiryo",sans-serif;
  background:linear-gradient(135deg,#ffe66d,#ff9ff3 50%,#74d3ff)}
+svg{width:1em;height:1em;vertical-align:-.12em}
 button{font:inherit;color:inherit;cursor:pointer;border:.5vmin solid #1b1b3a;border-radius:2vmin;background:#fff;
  padding:1vmin 2vmin;min-height:48px;box-shadow:0 .6vmin 0 #1b1b3a;font-size:max(2.4vmin,16px)}
 button:active{transform:translateY(.5vmin);box-shadow:none}
+.act svg{width:1.4em;height:1.4em;vertical-align:middle}
 #panel{padding:1.2vmin 2vmin;display:flex;flex-direction:column;gap:1vmin;background:rgba(255,255,255,.55)}
 .r{display:flex;flex-wrap:wrap;align-items:center;gap:1.2vmin}
 h1{font-size:max(3.6vmin,22px);flex:1;min-width:260px}
@@ -31,14 +33,16 @@ body.play #bar{display:flex}
 .cell{container-type:size;flex:0 0 calc((100% - (var(--cols) - 1)*var(--g))/var(--cols));background:var(--c);
  border:1.2vmin solid #1b1b3a;border-radius:4vmin;box-shadow:0 1.2vmin 0 #1b1b3a;position:relative;
  display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .08s,filter .15s}
-.em{font-size:58cqmin;line-height:1.05}
-.lb{font-size:16cqmin;color:#fff;-webkit-text-stroke:2cqmin #1b1b3a;paint-order:stroke fill}
+.em{font-size:58cqmin;line-height:1.05;white-space:nowrap}
+.lb{font-size:16cqmin;color:#fff;-webkit-text-stroke:2cqmin #1b1b3a;paint-order:stroke fill;white-space:nowrap}
+.hf{font-size:.62em}
+.hf .fl{display:inline-block;transform:scaleX(-1)}
 .no{position:absolute;top:3cqmin;left:3cqmin;width:20cqmin;height:20cqmin;border-radius:50%;background:#fff;
  border:1.2cqmin solid #1b1b3a;display:grid;place-items:center;font-style:normal;font-size:12cqmin}
 #stage.running .cell:not(.on){filter:brightness(.62) saturate(.7)}
 .cell.on{transform:scale(1.07);filter:brightness(1.3) saturate(1.3);border-color:#fff;z-index:2;
  box-shadow:0 0 0 1.2vmin #1b1b3a,0 0 8vmin 3vmin #fff176}
-#cd{display:none;position:fixed;inset:0;display:none;place-items:center;text-align:center;pointer-events:none;z-index:20;
+#cd{display:none;position:fixed;inset:0;place-items:center;text-align:center;pointer-events:none;z-index:20;
  font-size:55vmin;line-height:100vh;color:#fff;-webkit-text-stroke:2.5vmin #1b1b3a;paint-order:stroke fill;text-shadow:0 2vmin 0 #1b1b3a}
 #cd.pop{animation:pop .5s ease-out}
 @keyframes pop{0%{transform:scale(2.2);opacity:0}30%{opacity:1}100%{transform:scale(1)}}
@@ -67,15 +71,35 @@ body.play #bar{display:flex}
 
 <script>
 const $=s=>document.querySelector(s);
+
+/* 手をあげる人のイラスト（side: 'R'=画面の右側の手 / 'L'=左側の手） */
+function person(side){
+ const arm=`<line x1="64" y1="44" x2="80" y2="14" stroke="#1b1b3a" stroke-width="13" stroke-linecap="round"/>
+  <line x1="64" y1="44" x2="80" y2="14" stroke="#ffe0bd" stroke-width="7" stroke-linecap="round"/>
+  <circle cx="81" cy="10" r="10" fill="#ffe0bd" stroke="#ff1744" stroke-width="4"/>
+  <line x1="36" y1="44" x2="24" y2="68" stroke="#1b1b3a" stroke-width="13" stroke-linecap="round"/>
+  <line x1="36" y1="44" x2="24" y2="68" stroke="#ffe0bd" stroke-width="7" stroke-linecap="round"/>`;
+ const body=`<line x1="43" y1="68" x2="40" y2="94" stroke="#1b1b3a" stroke-width="11" stroke-linecap="round"/>
+  <line x1="57" y1="68" x2="60" y2="94" stroke="#1b1b3a" stroke-width="11" stroke-linecap="round"/>
+  <rect x="34" y="38" width="32" height="34" rx="9" fill="#fff" stroke="#1b1b3a" stroke-width="5"/>
+  <circle cx="50" cy="24" r="13" fill="#ffe0bd" stroke="#1b1b3a" stroke-width="5"/>
+  <circle cx="45" cy="23" r="2" fill="#1b1b3a"/><circle cx="55" cy="23" r="2" fill="#1b1b3a"/>
+  <path d="M45 29 Q50 33 55 29" stroke="#1b1b3a" stroke-width="2.5" fill="none" stroke-linecap="round"/>`;
+ const g=side==='R'?`${body}${arm}`:`<g transform="translate(100,0) scale(-1,1)">${body}${arm}</g>`;
+ return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">${g}</svg>`;
+}
+
 const ACTS={
- clap:{e:'👏',n:'たたく',c:'#ff4d6d'},
- foot:{e:'🦶',n:'ふむ',c:'#ff9f1c'},
- jump:{e:'🐰',n:'ジャンプ',c:'#2ec4b6'},
- rest:{e:'☕',n:'やすみ',c:'#8d99ae'},
- right:{e:'👉',n:'みぎ',c:'#4361ee'},
- left:{e:'👈',n:'ひだり',c:'#9b5de5'},
- knee:{e:'🦵',n:'ひざ',c:'#06d6a0'},
- shoulder:{e:'🙋',n:'かた',c:'#f15bb5'}
+ clap:{h:'👏',n:'たたく',c:'#ff4d6d'},
+ foot:{h:'🦶',n:'ふむ',c:'#ff9f1c'},
+ jump:{h:'🐰',n:'ジャンプ',c:'#2ec4b6'},
+ rest:{h:'☕',n:'やすみ',c:'#8d99ae'},
+ right:{h:person('R'),n:'みぎ手',c:'#4361ee'},
+ left:{h:person('L'),n:'ひだり手',c:'#9b5de5'},
+ knee:{h:'🦵',n:'ひざ',c:'#06d6a0'},
+ shoulder:{h:'🙋',n:'かた',c:'#f15bb5'},
+ highfive:{h:'<span class="hf"><span class="fl">✋</span><span>✋</span></span>',n:'ハイタッチ',c:'#e76f51'},
+ banzai:{h:'🙌',n:'バンザイ',c:'#f4a261'}
 };
 let beats=4,bpm=100,sel=new Set(['clap','foot','jump','rest']),pat=[],cells=[],run=null,cfOn=false;
 
@@ -89,7 +113,7 @@ function render(){
  let k=0;
  rows.forEach(r=>{const d=document.createElement('div');d.className='row';
   r.forEach(a=>{const c=document.createElement('div');c.className='cell';c.style.setProperty('--c',ACTS[a].c);
-   c.innerHTML=`<i class="no">${++k}</i><div class="em">${ACTS[a].e}</div><div class="lb">${ACTS[a].n}</div>`;
+   c.innerHTML=`<i class="no">${++k}</i><div class="em">${ACTS[a].h}</div><div class="lb">${ACTS[a].n}</div>`;
    d.appendChild(c);cells.push(c);});
   st.appendChild(d);});
 }
@@ -97,7 +121,7 @@ function buildUI(){
  for(let n=3;n<=8;n++){const b=document.createElement('button');b.textContent=n;b.dataset.n=n;
   b.onclick=()=>{beats=n;mark();gen();};$('#beatBtns').appendChild(b);}
  for(const k in ACTS){const b=document.createElement('button');b.className='act';b.dataset.k=k;
-  b.textContent=ACTS[k].e+' '+ACTS[k].n;
+  b.innerHTML=ACTS[k].h+' '+ACTS[k].n;
   b.onclick=()=>{if(sel.has(k)){if(sel.size>1)sel.delete(k);}else sel.add(k);mark();};
   $('#acts').appendChild(b);}
  mark();
@@ -108,12 +132,19 @@ function mark(){
 }
 function light(i){cells.forEach((c,j)=>c.classList.toggle('on',j===i));}
 
-/* ---------- 音(Web Audio合成) ---------- */
+/* ---------- 音(Web Audio合成・大音量) ---------- */
 let ac,master,noiseBuf;
 function initAudio(){
  if(!ac){ac=new (window.AudioContext||window.webkitAudioContext)();
-  const comp=ac.createDynamicsCompressor();master=ac.createGain();master.gain.value=.8;
-  master.connect(comp);comp.connect(ac.destination);
+  // master → サチュレーター(音を太く大きく) → コンプレッサー → 出力
+  master=ac.createGain();master.gain.value=1.6;
+  const sh=ac.createWaveShaper(),n=2048,cv=new Float32Array(n);
+  for(let i=0;i<n;i++){const x=i*2/(n-1)-1;cv[i]=Math.tanh(3*x)/Math.tanh(3);}
+  sh.curve=cv;
+  const comp=ac.createDynamicsCompressor();
+  comp.threshold.value=-8;comp.ratio.value=4;comp.attack.value=.003;comp.release.value=.15;
+  const out=ac.createGain();out.gain.value=1;
+  master.connect(sh);sh.connect(comp);comp.connect(out);out.connect(ac.destination);
   noiseBuf=ac.createBuffer(1,ac.sampleRate,ac.sampleRate);
   const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;}
  if(ac.state==='suspended')ac.resume();
@@ -131,22 +162,47 @@ function noise(o,t,{ft='highpass',f=1000,q=1,dur=.1,vol=.5}){
  g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);
  s.connect(fl);fl.connect(g);g.connect(o);s.start(t,Math.random()*.4,dur+.05);
 }
+/* マリオ風ジャンプ：矩形波が一気に駆け上がる */
+function marioJump(o,t){
+ [[1,.55],[.5,.3]].forEach(([m,v])=>{
+  const os=ac.createOscillator(),g=ac.createGain();
+  os.type='square';
+  os.frequency.setValueAtTime(260*m,t);
+  os.frequency.exponentialRampToValueAtTime(560*m,t+.09);
+  os.frequency.exponentialRampToValueAtTime(1150*m,t+.28);
+  g.gain.setValueAtTime(v,t);g.gain.linearRampToValueAtTime(v*.8,t+.2);
+  g.gain.exponentialRampToValueAtTime(.001,t+.36);
+  os.connect(g);g.connect(o);os.start(t);os.stop(t+.4);});
+}
 const SND={
- clap:(o,t)=>{[0,.015,.03].forEach((d,i)=>noise(o,t+d,{ft:'bandpass',f:1900,q:.8,dur:i<2?.03:.2,vol:i<2?.8:1.1}));},
- foot:(o,t)=>{osc(o,t,{f1:160,f2:40,dur:.38,vol:1.4});noise(o,t,{ft:'lowpass',f:500,dur:.05,vol:.5});},
- jump:(o,t)=>osc(o,t,{type:'triangle',f1:300,f2:1100,dur:.28,vol:.8}),
- rest:(o,t)=>{osc(o,t,{f1:1200,dur:.09,vol:.7});osc(o,t,{f1:1900,dur:.05,vol:.3});},
- right:(o,t)=>{osc(o,t,{type:'triangle',f1:988,dur:.4,vol:.7,pan:.9});osc(o,t,{f1:1976,dur:.25,vol:.25,pan:.9});},
- left:(o,t)=>{osc(o,t,{type:'triangle',f1:659,dur:.4,vol:.7,pan:-.9});osc(o,t,{f1:1318,dur:.25,vol:.25,pan:-.9});},
- knee:(o,t)=>osc(o,t,{f1:250,f2:110,dur:.24,vol:1.1}),
- shoulder:(o,t)=>{osc(o,t,{type:'square',f1:540,dur:.14,vol:.3});osc(o,t,{type:'square',f1:800,dur:.14,vol:.3});}
+ clap:(o,t)=>{[0,.015,.03].forEach((d,i)=>noise(o,t+d,{ft:'bandpass',f:1900,q:.8,dur:i<2?.03:.22,vol:i<2?1.4:1.9}));
+  noise(o,t,{f:4000,dur:.05,vol:.6});},
+ // 大きな「ドン！」：長く響く重低音＋アタック
+ foot:(o,t)=>{
+  osc(o,t,{f1:130,f2:36,dur:.65,vol:2.4});
+  osc(o,t,{type:'triangle',f1:85,f2:34,dur:.5,vol:1.4});
+  osc(o,t,{f1:55,dur:.8,vol:1.2});
+  noise(o,t,{ft:'lowpass',f:2200,dur:.04,vol:1.4});
+  noise(o,t,{ft:'lowpass',f:300,dur:.18,vol:1});},
+ jump:marioJump,
+ rest:(o,t)=>{osc(o,t,{f1:1200,dur:.1,vol:1.2});osc(o,t,{f1:1900,dur:.06,vol:.6});noise(o,t,{ft:'bandpass',f:1500,q:3,dur:.03,vol:.5});},
+ right:(o,t)=>{osc(o,t,{type:'triangle',f1:988,dur:.45,vol:1.2,pan:.9});osc(o,t,{f1:1976,dur:.3,vol:.5,pan:.9});},
+ left:(o,t)=>{osc(o,t,{type:'triangle',f1:659,dur:.45,vol:1.2,pan:-.9});osc(o,t,{f1:1318,dur:.3,vol:.5,pan:-.9});},
+ knee:(o,t)=>{osc(o,t,{f1:260,f2:100,dur:.28,vol:1.8});noise(o,t,{ft:'lowpass',f:900,dur:.05,vol:.8});},
+ shoulder:(o,t)=>{osc(o,t,{type:'square',f1:540,dur:.16,vol:.6});osc(o,t,{type:'square',f1:800,dur:.16,vol:.6});},
+ // ハイタッチ：鋭い「パチーン！」
+ highfive:(o,t)=>{noise(o,t,{f:2500,dur:.14,vol:2.2});osc(o,t,{type:'triangle',f1:1800,f2:800,dur:.1,vol:1});noise(o,t,{ft:'bandpass',f:5000,q:1,dur:.2,vol:.8});},
+ // バンザイ：キラキラ上昇＋シンバル
+ banzai:(o,t)=>{[784,988,1175,1568].forEach((f,i)=>osc(o,t+i*.05,{type:'triangle',f1:f,dur:.4,vol:.9}));
+  noise(o,t+.15,{f:6000,dur:.5,vol:.7});}
 };
-function beep(o,t,go){osc(o,t,{f1:go?1320:880,dur:go?.4:.14,vol:.7});if(go)osc(o,t,{type:'triangle',f1:1760,dur:.4,vol:.3});}
+function beep(o,t,go){osc(o,t,{f1:go?1320:880,dur:go?.45:.16,vol:1.4});if(go){osc(o,t,{type:'triangle',f1:1760,dur:.45,vol:.7});osc(o,t,{type:'square',f1:660,dur:.3,vol:.4});}}
 function fanfare(o,t){
  [[523,0],[659,.16],[784,.32],[1046,.48]].forEach(([f,d])=>{
-  osc(o,t+d,{type:'sawtooth',f1:f,dur:.22,vol:.28});osc(o,t+d,{type:'square',f1:f*2,dur:.22,vol:.1});});
- [523,659,784,1046,1318].forEach(f=>{osc(o,t+.7,{type:'sawtooth',f1:f,dur:1.4,vol:.2});osc(o,t+.7,{type:'triangle',f1:f/2,dur:1.4,vol:.2});});
- noise(o,t+.7,{f:5000,dur:1.6,vol:.5});
+  osc(o,t+d,{type:'sawtooth',f1:f,dur:.22,vol:.55});osc(o,t+d,{type:'square',f1:f*2,dur:.22,vol:.2});});
+ [523,659,784,1046,1318].forEach(f=>{osc(o,t+.7,{type:'sawtooth',f1:f,dur:1.4,vol:.4});osc(o,t+.7,{type:'triangle',f1:f/2,dur:1.4,vol:.4});});
+ noise(o,t+.7,{f:5000,dur:1.6,vol:.9});
+ osc(o,t+.7,{f1:130,f2:50,dur:.6,vol:1.8});
 }
 
 /* ---------- 進行(AudioContext.currentTimeで全イベントを事前予約) ---------- */
@@ -154,14 +210,14 @@ function start(){
  if(run)return;
  initAudio();
  const b=60/bpm,n=beats,t0=ac.currentTime+.4,g=ac.createGain();g.connect(master);
- const ev=[],seg=[0,n+4]; // おてほん開始拍 / ほんばん開始拍
+ const ev=[];
  for(let i=0;i<n;i++){const t=t0+i*b;ev.push({t,k:'demo',i});SND[pat[i]](g,t);}
  for(let k=0;k<4;k++){const t=t0+(n+k)*b;ev.push({t,k:'cd',i:k});beep(g,t,k===3);}
  for(let i=0;i<n;i++){const t=t0+(n+4+i)*b;ev.push({t,k:'play',i});SND[pat[i]](g,t);}
  const tEnd=t0+(2*n+5)*b;ev.push({t:tEnd,k:'end'});fanfare(g,tEnd);
  // BGM:ハイハット+downbeatベース
  for(let k=0;k<2*n+4;k++){const t=t0+k*b;
-  noise(g,t,{f:7000,dur:.04,vol:.1});noise(g,t+b/2,{f:7000,dur:.03,vol:.06});
+  noise(g,t,{f:7000,dur:.04,vol:.12});noise(g,t+b/2,{f:7000,dur:.03,vol:.07});
   if(k<n||k>=n+4){const i=k<n?k:k-n-4;if(i===0)osc(g,t,{type:'triangle',f1:130,f2:98,dur:.3,vol:.3});}}
  run={ev,b,g,off:0};
  document.body.classList.add('play');$('#stage').classList.add('running');
